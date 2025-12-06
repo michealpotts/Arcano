@@ -1,18 +1,22 @@
 import { useState } from "react";
+import { useAuth } from "../../context/AuthContext";
 
 /* ------------------------------------------------------
    DASHBOARD PANEL — ARCANO AAA VERSION
 ------------------------------------------------------- */
 
 export default function DashboardPanel() {
-  // TEMP USER DATA (later will come from backend/context)
+  const { user: authUser } = useAuth();
+
+  // TEMP USER DATA merged with authenticated user data
   const user = {
-    username: "ArcanoMaster",
-    level: 12,
-    xp: 4200,
+    username: authUser?.nickName || "Player",
+    playerId: authUser?.playerId,
+    level: authUser?.level ?? 0,
+    xp: authUser?.xp ?? 0,
     xpToNext: 6000,
     streak: 4,
-    arcano: 1340,
+    galaBalance: authUser?.galaBalance || "0.00000000",
     eggs: 4,
     creatures: 3,
     legendaryCreatures: 1,
@@ -86,13 +90,13 @@ export default function DashboardPanel() {
             </p>
           </div>
 
-          {/* STREAK + ARCANO */}
+          {/* STREAK + GALA BALANCE */}
           <div className="text-right">
             <p className="text-sm text-purple-300 font-semibold">
               🔥 Streak: {user.streak}
             </p>
             <p className="text-sm text-yellow-300 font-semibold">
-              💰 {user.arcano} ARCANO
+              💎 {user.galaBalance} GALA
             </p>
 
             <button className="mt-2 px-3 py-1.5 text-xs bg-purple-600/70 hover:bg-purple-700 border border-purple-300 rounded-xl">

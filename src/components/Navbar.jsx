@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import { Link } from "react-router-dom";
 import { useWallet } from "../context/WalletContext.jsx";
+import AuthContext, { useAuth } from "../context/AuthContext.jsx";
 
 export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -97,22 +98,24 @@ export default function Navbar() {
 }
 
 function WalletConnectButton({ className = "hidden md:inline-flex px-5 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-sm md:text-base font-bold shadow-lg shadow-purple-900/40 transition" }) {
-  const { account, connect, disconnect, isConnected, provider } = useWallet();
+  const { account, connect, provider } = useWallet();
   const [noProviderVisible, setNoProviderVisible] = useState(false);
   const [busy, setBusy] = useState(false);
-
-  const short = account ? `${account.slice(0, 6)}...${account.slice(-4)}` : null;
+  const { token, user, login, logout, isAuthenticated } = useAuth();
+  const name = user?.nickName;
+  const shortName = name ? `${name.slice(0, 6)}...${name.slice(-4)}` : null;
 
   const handleConnect = async () => {
     setBusy(true);
     try {
       const res = await connect();
+      login(res.token, res.profile);
       if (res && res.error === "no_provider") {
         // Show install instructions inline
         setNoProviderVisible(true);
       } else {
         setNoProviderVisible(false);
-      }
+      }     
     } catch (e) {
       // keep UI simple; show install instructions as fallback
       setNoProviderVisible(true);
@@ -122,15 +125,16 @@ function WalletConnectButton({ className = "hidden md:inline-flex px-5 py-2 roun
   };
 
   // If a provider becomes available (e.g., user installed an extension and refreshed), hide the notice
+  
   React.useEffect(() => {
     if (provider) setNoProviderVisible(false);
   }, [provider]);
 
-  return isConnected ? (
+  return isAuthenticated ? (
     <div className={className + " flex items-center gap-3"}>
-      <span className="text-sm text-white/90 font-mono">{short}</span>
+      <span className="text-sm text-white/90 font-mono">{shortName}</span>
       <button
-        onClick={disconnect}
+        onClick={logout}
         className="px-3 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-xs text-white"
       >
         Disconnect

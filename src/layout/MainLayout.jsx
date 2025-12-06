@@ -4,6 +4,7 @@ import { Routes, Route, useLocation } from "react-router-dom";
 
 // Pages
 import Home from "../pages/Home";
+import Login from "../pages/Login";
 import MyEggs from "../pages/MyEggs";
 import Incubator from "../pages/Incubator";
 import Creatures from "../pages/Creatures";
@@ -27,8 +28,12 @@ export default function MainLayout() {
 
       {/* PAGE CONTENT */}
       <div className={isHome ? "" : "pt-24"}>
+
         <Routes>
           <Route path="/" element={<Home />} />
+
+          {/* Authentication */}
+          <Route path="/login" element={<Login />} />
 
           {/* MAIN PROFILE */}
           <Route path="/profile" element={<Profile />} />
