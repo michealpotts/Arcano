@@ -1,6 +1,7 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { profileAPI } from "../../services/authAPI";
+import { getImageAsDataUrl } from "../../utils/imageUrl";
 
 /* ------------------------------------------------------
    DASHBOARD PANEL — ARCANO AAA VERSION
@@ -35,7 +36,17 @@ export default function DashboardPanel() {
   const [newName, setNewName] = useState("");
   const [uploadError, setUploadError] = useState(null);
   const [nameError, setNameError] = useState(null);
+  const [profileImageUrl, setProfileImageUrl] = useState(null);
   const fileInputRef = useRef(null);
+
+  // Load profile picture
+  useEffect(() => {
+    if (authUser?.profilePicture) {
+      getImageAsDataUrl(authUser.profilePicture).then(url => {
+        if (url) setProfileImageUrl(url);
+      });
+    }
+  }, [authUser?.profilePicture]);
 
   // Daily missions temporary
   const [missions, setMissions] = useState([
@@ -83,6 +94,11 @@ export default function DashboardPanel() {
       if (updated) {
         // Update AuthContext with new profile data
         login({ profile: updated });
+        // Reload image
+        if (updated.profilePicture) {
+          const newUrl = await getImageAsDataUrl(updated.profilePicture);
+          if (newUrl) setProfileImageUrl(newUrl);
+        }
         console.log("Profile picture uploaded successfully");
       } else {
         setUploadError("Failed to upload profile picture");
@@ -141,8 +157,8 @@ export default function DashboardPanel() {
           <div className="relative flex items-center gap-5">
             {/* Avatar */}
             <div className="relative w-16 h-16 rounded-2xl bg-purple-700/40 border border-purple-300/20 flex items-center justify-center overflow-hidden">
-              {authUser?.profilePicture ? (
-                <img src={authUser.profilePicture} alt="avatar" className="w-full h-full object-cover" />
+              {profileImageUrl ? (
+                <img src={profileImageUrl} alt="avatar" className="w-full h-full object-cover" />
               ) : (
                 <div className="text-4xl">🐉</div>
               )}
