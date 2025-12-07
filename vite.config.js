@@ -6,7 +6,7 @@ import path from "path";
 export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
-    port: 8000, 
+    port: 80, 
   },
   plugins: [react(), tailwindcss()],
   resolve: {
