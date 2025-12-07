@@ -6,8 +6,8 @@ export const authAPI = {
     return res.data;
   },
 
-  async login(walletAddress, message, signature,timestamp) {
-    const payload = { walletAddress, message, signature , timestamp};
+  async login(walletAddress, message, signature, timestamp) {
+    const payload = { walletAddress, message, signature, timestamp };
     const res = await apiClient.post("/auth/login", payload);
     // Backend returns { success, data: { token, profile }, message }
     return res.data?.data || res.data;
@@ -26,15 +26,17 @@ export const profileAPI = {
   },
 
   async updateNickname(playerId, nickname) {
-    const res = await apiClient.put(`/profile/${playerId}/nickname`, { nickname });
-    return res.data;
+    const res = await apiClient.patch(`/profile/${playerId}/nickname`, { nickName: nickname });
+    // Backend returns { success, data: { ...profile }, message }
+    return res.data?.data || res.data;
   },
 
   async uploadProfilePicture(playerId, formData) {
-    const res = await apiClient.post(`/profile/${playerId}/picture`, formData, {
+    const res = await apiClient.patch(`/profile/${playerId}/profile-picture`, formData, {
       headers: { "Content-Type": "multipart/form-data" },
     });
-    return res.data;
+    // Backend returns { success, data: { ...profile }, message }
+    return res.data?.data || res.data;
   },
 };
 

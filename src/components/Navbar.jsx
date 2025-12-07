@@ -103,7 +103,7 @@ function WalletConnectButton({ className = "hidden md:inline-flex px-5 py-2 roun
   const [busy, setBusy] = useState(false);
   const { token, user, login, logout, isAuthenticated } = useAuth();
   const name = user?.nickName;
-  const shortName = name ? `${name.slice(0, 6)}...${name.slice(-4)}` : null;
+  const shortName = name ? name.slice(0, 6): null;
 
   const handleConnect = async () => {
     setBusy(true);
