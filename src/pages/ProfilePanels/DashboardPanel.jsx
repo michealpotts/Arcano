@@ -354,7 +354,7 @@ export default function DashboardPanel() {
           NAME EDIT MODAL
       ===================================================== */}
       {showNameModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" style={{ height: "500px" }}>
           <div className="w-full max-w-md bg-black/80 border border-white/10 rounded-2xl p-6">
             <h3 className="text-lg font-semibold mb-3">Edit Profile Name</h3>
             <input
