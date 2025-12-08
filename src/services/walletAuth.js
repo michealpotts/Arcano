@@ -20,10 +20,14 @@ export async function loginWithWallet(provider, account) {
     // First try: personal_sign (EIP-191)
     if (provider.request) {
       signature = await provider.request({ method: "personal_sign", params: [message, account] });
+      console.log('----------------------pers');
+      
     }
     // Fallback: eth_sign
     else if (!signature && provider.request) {
       signature = await provider.request({ method: "eth_sign", params: [account, message] });
+      console.log('-----------------------------eth');
+      
     }
     // Fallback: legacy enable + signPersonalMessage
     else if (!signature && provider.send) {
