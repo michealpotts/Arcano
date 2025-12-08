@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useContext, useEffect, useState, useRef } from "react";
 
 const AuthContext = createContext(null);
 
@@ -15,42 +15,68 @@ function decodeJWT(token) {
   }
 }
 
-export function AuthProvider({ children }) {
-  const [token, setToken] = useState(null);
-  const [user, setUser] = useState(null);
-  const [isHydrated, setIsHydrated] = useState(false);
+// Helper function to safely read from localStorage (client-side only)
+function getStoredToken() {
+  if (typeof window === "undefined") return null;
+  try {
+    return localStorage.getItem("authToken");
+  } catch (e) {
+    return null;
+  }
+}
 
-  // Initialize from localStorage on mount
-  useEffect(() => {
-    try {
-      const storedToken = localStorage.getItem("authToken");
-      const storedUser = localStorage.getItem("authUser");
+function getStoredUser() {
+  if (typeof window === "undefined") return null;
+  try {
+    const stored = localStorage.getItem("authUser");
+    return stored ? JSON.parse(stored) : null;
+  } catch (e) {
+    return null;
+  }
+}
 
-      if (storedToken) {
-        setToken(storedToken);
-        // If we have stored user profile, restore it
-        if (storedUser) {
-          setUser(JSON.parse(storedUser));
-        } else {
-          // Fallback: extract from JWT token if no stored profile
-          const decoded = decodeJWT(storedToken);
-          if (decoded) {
-            setUser({
-              playerId: decoded.playerId,
-              walletAddress: decoded.walletAddress,
-            });
-          }
-        }
-      }
-    } catch (e) {
-      console.error("Failed to restore auth state:", e);
-    } finally {
-      setIsHydrated(true);
+// Initialize state from localStorage immediately (client-side only)
+function getInitialState() {
+  const storedToken = getStoredToken();
+  const storedUser = getStoredUser();
+  
+  let initialUser = storedUser;
+  if (storedToken && !initialUser) {
+    // Fallback: extract from JWT token if no stored profile
+    const decoded = decodeJWT(storedToken);
+    if (decoded) {
+      initialUser = {
+        playerId: decoded.playerId,
+        walletAddress: decoded.walletAddress,
+      };
     }
+  }
+  
+  return {
+    token: storedToken,
+    user: initialUser,
+  };
+}
+
+export function AuthProvider({ children }) {
+  const initialState = getInitialState();
+  const [token, setToken] = useState(initialState.token);
+  const [user, setUser] = useState(initialState.user);
+  const [isHydrated, setIsHydrated] = useState(false);
+  const hasInitialized = useRef(false);
+
+  // Mark as hydrated and allow persistence after initial mount
+  useEffect(() => {
+    setIsHydrated(true);
+    // Use a microtask to ensure persistence effects have already run
+    Promise.resolve().then(() => {
+      hasInitialized.current = true;
+    });
   }, []);
 
-  // Persist token to localStorage whenever it changes
+  // Persist token to localStorage whenever it changes (skip initial mount)
   useEffect(() => {
+    if (!hasInitialized.current) return;
     try {
       if (token) {
         localStorage.setItem("authToken", token);
@@ -62,8 +88,9 @@ export function AuthProvider({ children }) {
     }
   }, [token]);
 
-  // Persist user profile to localStorage whenever it changes
+  // Persist user profile to localStorage whenever it changes (skip initial mount)
   useEffect(() => {
+    if (!hasInitialized.current) return;
     try {
       if (user) {
         localStorage.setItem("authUser", JSON.stringify(user));
