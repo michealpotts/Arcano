@@ -274,8 +274,8 @@ function ItemDetailModal({ item, onClose, useBoostItem, removeItem, addCurrency 
   };
 
   return (
-    <div className="fixed inset-0 bg-black/70 backdrop-blur-xl flex items-center justify-center z-50 px-4">
-      <div className="relative bg-black/80 border border-white/15 rounded-3xl max-w-md w-full p-6">
+    <div className="fixed inset-0 bg-black/40 backdrop-blur-xl flex items-center justify-center z-50 px-4">
+      <div className="relative bg-black border border-white/15 rounded-3xl max-w-md w-full p-6">
         <button onClick={onClose} className="absolute top-3 right-3 text-white text-lg">
           ×
         </button>

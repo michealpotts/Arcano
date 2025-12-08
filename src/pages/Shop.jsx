@@ -102,6 +102,7 @@ export default function Shop() {
               type="checkbox"
               checked={autoSendToIncubator}
               onChange={(e) => setAutoSendToIncubator(e.target.checked)}
+              className="focus:outline-none"
             />
             <span className="text-gray-300 text-sm">
               Auto-send minted eggs directly to incubator

@@ -171,7 +171,7 @@ export default function Marketplace() {
                       key={f}
                       className="flex items-center gap-2 cursor-pointer"
                     >
-                      <input type="checkbox" className="form-checkbox" />
+                      <input type="checkbox" className="form-checkbox focus:outline-none" />
                       <span>{f}</span>
                     </label>
                   ))}
@@ -185,7 +185,7 @@ export default function Marketplace() {
                 <div className="flex flex-col gap-2 text-sm">
                   {["Common", "Rare", "Epic", "Legendary", "Mythic"].map((r) => (
                     <label key={r} className="flex items-center gap-2">
-                      <input type="checkbox" className="form-checkbox" />
+                      <input type="checkbox" className="form-checkbox focus:outline-none" />
                       <span>{r}</span>
                     </label>
                   ))}
@@ -199,7 +199,7 @@ export default function Marketplace() {
                 <div className="flex flex-col gap-2 text-sm">
                   {["Egg", "Creature"].map((t) => (
                     <label key={t} className="flex items-center gap-2">
-                      <input type="checkbox" className="form-checkbox" />
+                      <input type="checkbox" className="form-checkbox focus:outline-none" />
                       <span>{t}</span>
                     </label>
                   ))}
@@ -213,12 +213,12 @@ export default function Marketplace() {
                 <div className="flex items-center gap-2 text-sm">
                   <input
                     placeholder="Min"
-                    className="w-20 px-2 py-1 bg-black/50 border border-white/10 rounded-lg text-center"
+                    className="w-20 px-2 py-1 bg-black/50 border border-white/10 rounded-lg text-center focus:outline-none"
                   />
                   <span>-</span>
                   <input
                     placeholder="Max"
-                    className="w-20 px-2 py-1 bg-black/50 border border-white/10 rounded-lg text-center"
+                    className="w-20 px-2 py-1 bg-black/50 border border-white/10 rounded-lg text-center focus:outline-none"
                   />
                 </div>
               </div>
@@ -235,6 +235,7 @@ export default function Marketplace() {
                   w-full md:w-80 px-4 py-2
                   rounded-xl bg-black/60 border border-white/10
                   text-sm
+                  focus:outline-none
                 "
               />
 

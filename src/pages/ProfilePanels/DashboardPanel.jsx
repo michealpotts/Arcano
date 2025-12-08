@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { useAuth } from "../../context/AuthContext";
 import { profileAPI } from "../../services/authAPI";
 import { getImageAsDataUrl } from "../../utils/imageUrl";
@@ -353,19 +354,19 @@ export default function DashboardPanel() {
       {/* =====================================================
           NAME EDIT MODAL
       ===================================================== */}
-      {showNameModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" style={{ height: "500px" }}>
-          <div className="w-full max-w-md bg-black/80 border border-white/10 rounded-2xl p-6">
-            <h3 className="text-lg font-semibold mb-3">Edit Profile Name</h3>
+      {showNameModal && createPortal(
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-xl">
+          <div className="w-full max-w-md bg-black border border-white/10 rounded-2xl p-6 mx-4">
+            <h3 className="text-lg font-semibold mb-3 text-white">Edit Profile Name</h3>
             <input
-              className="w-full mb-4 px-3 py-2 rounded bg-white/5 border border-white/10"
+              className="w-full mb-4 px-3 py-2 rounded bg-white/5 border border-white/10 focus:outline-none text-white placeholder:text-gray-400"
               placeholder={user.username}
               value={newName}
               onChange={(e) => setNewName(e.target.value)}
             />
             {nameError && <p className="text-red-400 text-xs mb-2">{nameError}</p>}
             <div className="flex justify-end gap-2">
-              <button onClick={() => setShowNameModal(false)} className="px-3 py-2 rounded bg-white/5 hover:bg-white/10">
+              <button onClick={() => setShowNameModal(false)} className="px-3 py-2 rounded bg-white/5 hover:bg-white/10 text-white">
                 Cancel
               </button>
               <button onClick={saveName} className="px-3 py-2 rounded bg-purple-600 text-white hover:bg-purple-700">
@@ -373,7 +374,8 @@ export default function DashboardPanel() {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </>
   );

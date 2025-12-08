@@ -92,7 +92,7 @@ export default function SettingsPanel() {
               step="1"
               value={battleSpeed}
               onChange={(e) => setBattleSpeed(Number(e.target.value))}
-              className="w-32 accent-purple-500"
+              className="w-32 accent-purple-500 focus:outline-none"
             />
           </div>
           <p className="text-xs text-gray-500 text-right -mt-2">
@@ -186,8 +186,8 @@ export default function SettingsPanel() {
           DELETE MODAL
       ======================== */}
       {showDeleteModal && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-xl flex items-center justify-center z-50 px-4">
-          <div className="bg-black/80 border border-white/10 rounded-3xl p-6 max-w-sm w-full">
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-xl flex items-center justify-center z-50 px-4">
+          <div className="bg-black border border-white/10 rounded-3xl p-6 max-w-sm w-full">
             <h3 className="text-lg font-semibold text-white mb-2">
               Delete Account?
             </h3>
