@@ -27,7 +27,7 @@ export default function Shop() {
 
   const EGG_CARDS = [
     { faction: "Frost", colors: "from-cyan-400 to-blue-600", img: "https://res.cloudinary.com/dtv3mleyc/image/upload/v1764728119/frost_nejhvh.png" },
-    { faction: "Inferno", colors: "from-red-500 to-orange-500", img: "/images/eggs/inferno.png" },
+    { faction: "Inferno", colors: "from-red-500 to-orange-500", img: "https://res.cloudinary.com/dtv3mleyc/image/upload/v1764728116/fire_kncfkl.png" },
     { faction: "Nature", colors: "from-lime-400 to-emerald-600", img: "https://res.cloudinary.com/dtv3mleyc/image/upload/v1764728120/nature_qryhhr.png" },
     { faction: "Storm", colors: "from-yellow-300 to-indigo-500", img: "https://res.cloudinary.com/dtv3mleyc/image/upload/v1764728125/storm_x4a8jm.png" },
   ];
