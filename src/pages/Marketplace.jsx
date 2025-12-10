@@ -13,7 +13,7 @@ export default function Marketplace() {
       rarity: "Common",
       price: "85",
       currency: "GALA",
-      image: "/images/eggs/frost.png",
+      image: "https://gateway.pinata.cloud/ipfs/bafybeid3sfqwu4innxxd7wunnapfvqhylstl6lstwvtffljwwbb5m74ffy",
     },
     {
       id: 2,
@@ -23,7 +23,7 @@ export default function Marketplace() {
       rarity: "Common",
       price: "85",
       currency: "GALA",
-      image: "/images/eggs/inferno.png",
+      image: "https://gateway.pinata.cloud/ipfs/bafybeiaaty7r76r7mxsrqu2hrgt6jz2xcg3mwzpzbnbdtlboyym522joqe",
     },
     {
       id: 3,
@@ -33,7 +33,7 @@ export default function Marketplace() {
       rarity: "Common",
       price: "85",
       currency: "GALA",
-      image: "https://res.cloudinary.com/dtv3mleyc/image/upload/v1764728125/storm_x4a8jm.png",
+      image: "https://gateway.pinata.cloud/ipfs/bafybeigcof4zyinovl7jzkudxgrndeztbekyddccvvkxwjqv63f4pzzubu",
     },
     {
       id: 4,
@@ -43,7 +43,7 @@ export default function Marketplace() {
       rarity: "Common",
       price: "85",
       currency: "GALA",
-      image: "https://res.cloudinary.com/dtv3mleyc/image/upload/v1764728120/nature_qryhhr.png",
+      image: "https://gateway.pinata.cloud/ipfs/bafybeici6cf2ykq4bnwjbxfueg4w3sziu3ghm64dioaxidh6jg36mhqose",
     },
     // creatures
     {

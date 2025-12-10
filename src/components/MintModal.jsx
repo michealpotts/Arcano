@@ -26,6 +26,12 @@ export default function MintModal({ isOpen, onClose, onSuccess }) {
 
   // Factions list
   const factions = ["Frost", "Inferno", "Nature", "Storm"];
+  const factions_images = {
+    Frost: "https://gateway.pinata.cloud/ipfs/bafybeid3sfqwu4innxxd7wunnapfvqhylstl6lstwvtffljwwbb5m74ffy",
+    Inferno: "https://gateway.pinata.cloud/ipfs/bafybeiaaty7r76r7mxsrqu2hrgt6jz2xcg3mwzpzbnbdtlboyym522joqe",
+    Nature: "https://gateway.pinata.cloud/ipfs/bafybeici6cf2ykq4bnwjbxfueg4w3sziu3ghm64dioaxidh6jg36mhqose",
+    Storm: "https://gateway.pinata.cloud/ipfs/bafybeigcof4zyinovl7jzkudxgrndeztbekyddccvvkxwjqv63f4pzzubu",
+  };
 
   // Rarity table
   const rarityRoll = () => {
@@ -137,12 +143,12 @@ export default function MintModal({ isOpen, onClose, onSuccess }) {
   const ResultFX = () => (
     <div className="flex flex-col items-center">
       <div
-        className={`w-48 h-48 rounded-full bg-black border border-white/20 flex items-center justify-center ${rarityGlow[rarity]}`}
+        className={`w-48 h-48 rounded-full bg-black border border-white/40 flex items-center justify-center ${rarityGlow[rarity]}`}
       >
         <img
-          src={`/images/eggs/${faction.toLowerCase()}.png`}
+          src={`${factions_images[`${faction}`]}`}
           alt=""
-          className="w-28 h-28 object-contain"
+          className="object-contain rounded-full w-47 h-47"
         />
       </div>
 

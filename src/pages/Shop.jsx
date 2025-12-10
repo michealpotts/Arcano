@@ -24,12 +24,11 @@ export default function Shop() {
   const [autoSendToIncubator, setAutoSendToIncubator] = useState(false);
 
   const TABS = ["Eggs", "Cosmetics", "Boosts"];
-
   const EGG_CARDS = [
-    { faction: "Frost", colors: "from-cyan-400 to-blue-600", img: "https://res.cloudinary.com/dtv3mleyc/image/upload/v1764728119/frost_nejhvh.png" },
-    { faction: "Inferno", colors: "from-red-500 to-orange-500", img: "https://res.cloudinary.com/dtv3mleyc/image/upload/v1764728116/fire_kncfkl.png" },
-    { faction: "Nature", colors: "from-lime-400 to-emerald-600", img: "https://res.cloudinary.com/dtv3mleyc/image/upload/v1764728120/nature_qryhhr.png" },
-    { faction: "Storm", colors: "from-yellow-300 to-indigo-500", img: "https://res.cloudinary.com/dtv3mleyc/image/upload/v1764728125/storm_x4a8jm.png" },
+    { faction: "Frost", img: "https://gateway.pinata.cloud/ipfs/bafybeid3sfqwu4innxxd7wunnapfvqhylstl6lstwvtffljwwbb5m74ffy", background: "https://res.cloudinary.com/dtv3mleyc/image/upload/v1764728119/frost_nejhvh.png" },
+    { faction: "Inferno", img: "https://gateway.pinata.cloud/ipfs/bafybeiaaty7r76r7mxsrqu2hrgt6jz2xcg3mwzpzbnbdtlboyym522joqe", background: "https://res.cloudinary.com/dtv3mleyc/image/upload/v1764728116/fire_kncfkl.png" },
+    { faction: "Nature", img: "https://gateway.pinata.cloud/ipfs/bafybeici6cf2ykq4bnwjbxfueg4w3sziu3ghm64dioaxidh6jg36mhqose", background: "https://res.cloudinary.com/dtv3mleyc/image/upload/v1764728120/nature_qryhhr.png" },
+    { faction: "Storm", img: "https://gateway.pinata.cloud/ipfs/bafybeigcof4zyinovl7jzkudxgrndeztbekyddccvvkxwjqv63f4pzzubu", background: "https://res.cloudinary.com/dtv3mleyc/image/upload/v1764728125/storm_x4a8jm.png" },
   ];
 
   // rarity generator
@@ -39,6 +38,17 @@ export default function Shop() {
     if (roll < 0.12) return "epic";
     if (roll < 0.32) return "rare";
     return "common";
+  }
+
+  // Get border style based on faction
+  function getFactionBorderStyle(faction) {
+    const styles = {
+      Frost: "border-2 border-cyan-400/60 shadow-cyan-500/20",
+      Inferno: "border-2 border-orange-500/60 shadow-orange-500/20",
+      Nature: "border-2 border-green-400/60 shadow-green-500/20",
+      Storm: "border-2 border-yellow-400/60 shadow-yellow-500/20",
+    };
+    return styles[faction] || "border-2 border-white/20";
   }
 
   // Mint success handler
@@ -84,11 +94,10 @@ export default function Shop() {
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`px-3 py-2 rounded-lg text-sm ${
-                activeTab === tab
-                  ? "bg-purple-600 text-white"
-                  : "bg-black/40 text-gray-300 border border-white/10"
-              }`}
+              className={`px-3 py-2 rounded-lg text-sm ${activeTab === tab
+                ? "bg-purple-600 text-white"
+                : "bg-black/40 text-gray-300 border border-white/10"
+                }`}
             >
               {tab}
             </button>
@@ -127,10 +136,15 @@ export default function Shop() {
                   className="rounded-2xl p-5 bg-black/50 border border-white/10 shadow-lg hover:shadow-purple-500/20 transition-all duration-200 w-full max-w-[420px]"
                 >
                   <div
-                    className={`w-full h-32 rounded-xl bg-gradient-to-br ${egg.colors} 
-                                flex items-center justify-center mb-4`}
+                    className={`w-full h-32 rounded-xl flex items-center justify-center mb-4 relative bg-cover bg-center ${getFactionBorderStyle(egg.faction)}`}
+                    style={{
+                      backgroundImage: `url(${egg.background})`,
+                      ackgroundSize: "cover",
+                      backgroundPosition: "center",
+                      backdropFilter: "blur(30px)"
+                    }}
                   >
-                    <img src={egg.img} alt="" className="w-20 h-20 object-contain" />
+                    <img src={egg.img} alt="" className="w-25 h-25 object-contain rounded-full border-4 border-white/40 relative z-10" />
                   </div>
 
                   <h3 className="text-lg text-white font-semibold mb-4">
