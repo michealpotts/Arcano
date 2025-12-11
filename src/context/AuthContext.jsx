@@ -46,7 +46,6 @@ function getInitialState() {
     const decoded = decodeJWT(storedToken);
     if (decoded) {
       initialUser = {
-        playerId: decoded.playerId,
         walletAddress: decoded.walletAddress,
       };
     }

@@ -14,7 +14,7 @@ export default function DashboardPanel() {
   // TEMP USER DATA merged with authenticated user data
   const user = {
     username: authUser?.nickName || "Player",
-    playerId: authUser?.playerId,
+    walletAddress: authUser?.walletAddress,
     level: authUser?.level ?? 0,
     xp: authUser?.xp ?? 0,
     xpToNext: 6000,
@@ -79,8 +79,8 @@ export default function DashboardPanel() {
   const handleFileChange = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (!user.playerId) {
-      setUploadError("Player ID not found");
+    if (!user.walletAddress) {
+      setUploadError("Wallet address not found");
       return;
     }
 
@@ -90,7 +90,7 @@ export default function DashboardPanel() {
       const form = new FormData();
       // Backend expects field named 'profilePicture'
       form.append("profilePicture", file);
-      const updated = await profileAPI.uploadProfilePicture(user.playerId, form);
+      const updated = await profileAPI.uploadProfilePicture(user.walletAddress, form);
       
       if (updated) {
         // Update AuthContext with new profile data
@@ -120,8 +120,8 @@ export default function DashboardPanel() {
   };
 
   const saveName = async () => {
-    if (!user.playerId) {
-      setNameError("Player ID not found");
+    if (!user.walletAddress) {
+      setNameError("Wallet address not found");
       return;
     }
     if (!newName.trim()) {
@@ -130,7 +130,7 @@ export default function DashboardPanel() {
     }
 
     try {
-      const updated = await profileAPI.updateNickname(user.playerId, newName.trim());
+      const updated = await profileAPI.updateNickname(user.walletAddress, newName.trim());
       if (updated) {
         // Update AuthContext with new profile data
         login({ profile: updated });
