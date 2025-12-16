@@ -13,7 +13,6 @@ export async function loginWithWallet(client, account, ethereumProvider = null) 
   try {
     if (client.signMessage) {
       signature = await client.signMessage(message);
-      console.log("----------------cli-signature", signature);
     } else {
       throw new Error("No signing method available. Please ensure MetaMask is installed.");
     }
