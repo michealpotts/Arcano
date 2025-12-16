@@ -148,13 +148,10 @@ function WalletConnectButton({ className = "hidden md:inline-flex px-5 py-2 roun
       {noProviderVisible && (
         <div className="mt-2 p-3 bg-black/70 border border-white/10 rounded-lg text-sm text-gray-300 max-w-xs">
           <div className="font-semibold text-white">No wallet detected</div>
-          <div className="mt-1">Install a GalaChain or Ethereum-compatible wallet extension and try again.</div>
+          <div className="mt-1">Install MetaMask wallet extension and try again.</div>
           <ul className="mt-2 list-disc list-inside">
             <li>
               MetaMask: <a className="text-purple-300" href="https://metamask.io/download/" target="_blank" rel="noreferrer">metamask.io/download</a>
-            </li>
-            <li>
-              Gala: visit <a className="text-purple-300" href="https://gala.games" target="_blank" rel="noreferrer">gala.games</a>
             </li>
           </ul>
           <div className="mt-2 flex gap-2">

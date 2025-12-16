@@ -50,7 +50,7 @@ export default function Login() {
   return (
     <div className="max-w-3xl mx-auto py-24 px-6">
       <h1 className="text-3xl font-bold mb-4">Sign in with your Wallet</h1>
-      <p className="mb-6">Use your Gala or Ethereum wallet to sign a message and authenticate.</p>
+      <p className="mb-6">Use your MetaMask wallet to sign a message and authenticate.</p>
 
       {error && (
         <div className="mb-4 text-red-400">

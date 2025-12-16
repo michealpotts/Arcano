@@ -123,11 +123,13 @@ export function AuthProvider({ children }) {
   const logout = () => {
     setToken(null);
     setUser(null);
-    try {
-      localStorage.removeItem("authToken");
-      localStorage.removeItem("authUser");
-    } catch (e) {
-      console.error("Failed to clear storage:", e);
+    // Clear all localStorage data
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.clear();
+      } catch (e) {
+        console.error("Failed to clear localStorage:", e);
+      }
     }
   };
 

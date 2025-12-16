@@ -1,87 +1,197 @@
-import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
+import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from "react";
 import loginWithWallet from "../services/walletAuth";
+import { BrowserConnectClient } from '@gala-chain/connect';
 
 const WalletContext = createContext(null);
 
-export function WalletProvider({ children }) {
-  const [account, setAccount] = useState(null);
-  const [chainId, setChainId] = useState(null);
-  const [provider, setProvider] = useState(null);
+// LocalStorage keys
+const STORAGE_KEYS = {
+  ACCOUNT: "walletAccount",
+  CHAIN_ID: "walletChainId",
+  IS_CONNECTED: "walletConnected",
+};
 
-  const detectProvider = useCallback(() => {
-    // Only support Gala wallet (window.gala). Keep logic minimal and explicit.
-    if (typeof window === "undefined") return null;
-    return window.gala || null;
+// Helper functions for localStorage
+function getStoredAccount() {
+  if (typeof window === "undefined") return null;
+  try {
+    return localStorage.getItem(STORAGE_KEYS.ACCOUNT);
+  } catch (e) {
+    return null;
+  }
+}
+
+function getStoredChainId() {
+  if (typeof window === "undefined") return null;
+  try {
+    return localStorage.getItem(STORAGE_KEYS.CHAIN_ID);
+  } catch (e) {
+    return null;
+  }
+}
+
+function getStoredConnectionState() {
+  if (typeof window === "undefined") return false;
+  try {
+    return localStorage.getItem(STORAGE_KEYS.IS_CONNECTED) === "true";
+  } catch (e) {
+    return false;
+  }
+}
+
+function setStoredAccount(account) {
+  if (typeof window === "undefined") return;
+  try {
+    if (account) {
+      localStorage.setItem(STORAGE_KEYS.ACCOUNT, account);
+    } else {
+      localStorage.removeItem(STORAGE_KEYS.ACCOUNT);
+    }
+  } catch (e) {
+    console.error("Failed to store account:", e);
+  }
+}
+
+function setStoredChainId(chainId) {
+  if (typeof window === "undefined") return;
+  try {
+    if (chainId) {
+      localStorage.setItem(STORAGE_KEYS.CHAIN_ID, chainId);
+    } else {
+      localStorage.removeItem(STORAGE_KEYS.CHAIN_ID);
+    }
+  } catch (e) {
+    console.error("Failed to store chainId:", e);
+  }
+}
+
+function setStoredConnectionState(isConnected) {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(STORAGE_KEYS.IS_CONNECTED, isConnected ? "true" : "false");
+  } catch (e) {
+    console.error("Failed to store connection state:", e);
+  }
+}
+
+function clearStoredWallet() {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.removeItem(STORAGE_KEYS.ACCOUNT);
+    localStorage.removeItem(STORAGE_KEYS.CHAIN_ID);
+    localStorage.removeItem(STORAGE_KEYS.IS_CONNECTED);
+  } catch (e) {
+    console.error("Failed to clear wallet storage:", e);
+  }
+}
+
+export function WalletProvider({ children }) {
+  // Initialize state from localStorage
+  const [account, setAccount] = useState(() => getStoredAccount());
+  const [chainId, setChainId] = useState(() => getStoredChainId());
+  const [provider, setProvider] = useState(null);
+  const [isHydrated, setIsHydrated] = useState(false);
+  const hasInitialized = useRef(false);
+
+  // Mark as hydrated after initial mount
+  useEffect(() => {
+    setIsHydrated(true);
+    Promise.resolve().then(() => {
+      hasInitialized.current = true;
+    });
   }, []);
 
-  const handleAccounts = useCallback((accounts) => {
-    if (Array.isArray(accounts) && accounts.length > 0) {
-      setAccount(accounts[0]);
-    } else {
-      setAccount(null);
+  // Persist account to localStorage whenever it changes (skip initial mount)
+  useEffect(() => {
+    if (!hasInitialized.current) return;
+    setStoredAccount(account);
+    setStoredConnectionState(!!account);
+  }, [account]);
+
+  // Persist chainId to localStorage whenever it changes (skip initial mount)
+  useEffect(() => {
+    if (!hasInitialized.current) return;
+    setStoredChainId(chainId);
+  }, [chainId]);
+
+  const detectProvider = useCallback(() => {
+    // Use BrowserConnectClient instead of window.ethereum
+    try {
+      return new BrowserConnectClient();
+    } catch (err) {
+      console.warn("BrowserConnectClient not available:", err);
+      return null;
     }
   }, []);
 
-  const handleChain = useCallback((chain) => {
-    setChainId(chain?.toString?.() ?? chain);
-  }, []);
-
   const connect = useCallback(async () => {
-    const p = detectProvider();
-    if (!p) {
-      console.warn("No Gala wallet provider detected");
+    const client = detectProvider();
+    if (!client) {
+      console.warn("No BrowserConnectClient available");
       return { error: new Error("no_provider") };
     }
 
     try {
-      // Request accounts from wallet
-      let accounts;
-      if (p.request) {
-        accounts = await p.request({ method: "eth_requestAccounts" });
-      } else if (p.enable) {
-        accounts = await p.enable();
+      // Connect to GalaChain wallet using BrowserConnectClient
+      await client.connect();
+      
+      // Get Ethereum address from window.ethereum (MetaMask)
+      // BrowserConnectClient is for GalaChain, but we need Ethereum address for backend auth
+      let acct;
+      if (typeof window !== "undefined" && window.ethereum) {
+        try {
+          const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
+          if (accounts && accounts.length > 0) {
+            acct = accounts[0];
+          }
+        } catch (e) {
+          console.warn("Could not get account from window.ethereum:", e);
+        }
+      }
+      
+      // Fallback: Try to get from BrowserConnectClient directly
+      if (!acct) {
+        if (client.getAccountAddress) {
+          acct = await client.getAccountAddress();
+        } else if (client.getAddress) {
+          acct = await client.getAddress();
+        } else if (client.account) {
+          acct = client.account;
+        } else if (client.address) {
+          acct = client.address;
+        }
       }
 
-      if (!accounts || accounts.length === 0) {
-        return { error: new Error("No accounts returned from wallet") };
+      if (!acct) {
+        return { error: new Error("Cannot get account address. Please ensure MetaMask (window.ethereum) is installed and connected.") };
       }
-
-      const acct = accounts[0];
 
       // Perform wallet-based authentication: sign challenge and login
-      const loginRes = await loginWithWallet(p, acct);
+      // Pass both client (for GalaChain) and window.ethereum (for signing)
+      const ethereumProvider = typeof window !== "undefined" ? window.ethereum : null;
+      const loginRes = await loginWithWallet(client, acct, ethereumProvider);
       const { token, profile } = loginRes;
 
-      // Update provider/account/chain listeners after successful auth
-      setProvider(p);
-      handleAccounts(accounts);
-
-      try {
-        const id = await (p.request ? p.request({ method: "eth_chainId" }) : null);
-        handleChain(id);
-      } catch (e) {
-        // ignore chain id error
-      }
-
-      // Setup event listeners
-      if (p.on) {
-        p.on("accountsChanged", handleAccounts);
-        p.on("chainChanged", handleChain);
-      }
+      // Update provider/account after successful auth
+      setProvider(client);
+      setAccount(acct);
+      
+      // Store connection state in localStorage
+      setStoredAccount(acct);
+      setStoredConnectionState(true);
 
       return { success: true, token, profile };
     } catch (err) {
       console.error("Wallet connection failed:", err);
       return { error: err };
     }
-  }, [detectProvider, handleAccounts, handleChain]);
+  }, [detectProvider]);
 
   const disconnect = useCallback(() => {
-    const p = provider || detectProvider();
-    if (p && p.removeListener) {
+    const client = provider || detectProvider();
+    if (client && client.disconnect) {
       try {
-        p.removeListener("accountsChanged", handleAccounts);
-        p.removeListener("chainChanged", handleChain);
+        client.disconnect();
       } catch (e) {
         // ignore
       }
@@ -89,42 +199,78 @@ export function WalletProvider({ children }) {
     setAccount(null);
     setChainId(null);
     setProvider(null);
-  }, [provider, detectProvider, handleAccounts, handleChain]);
-
-  useEffect(() => {
-    const p = detectProvider();
-    if (!p) return;
-    setProvider(p);
-    // if the provider exposes current accounts, fetch them
-    (async () => {
+    // Clear all localStorage data
+    if (typeof window !== "undefined") {
       try {
-        if (p.request) {
-          const accounts = await p.request({ method: "eth_accounts" });
-          handleAccounts(accounts);
-          try {
-            const id = await p.request({ method: "eth_chainId" });
-            handleChain(id);
-          } catch (_) {}
-        }
+        localStorage.clear();
       } catch (e) {
-        // ignore
+        console.error("Failed to clear localStorage:", e);
       }
-    })();
-
-    if (p.on) {
-      p.on("accountsChanged", handleAccounts);
-      p.on("chainChanged", handleChain);
     }
+  }, [provider, detectProvider]);
 
-    return () => {
-      if (p.removeListener) {
+  // Restore wallet connection on mount if account is stored
+  useEffect(() => {
+    if (!isHydrated) return;
+    
+    const storedAccount = getStoredAccount();
+    const wasConnected = getStoredConnectionState();
+    
+    if (storedAccount && wasConnected) {
+      // Try to restore connection
+      (async () => {
         try {
-          p.removeListener("accountsChanged", handleAccounts);
-          p.removeListener("chainChanged", handleChain);
-        } catch (e) {}
-      }
-    };
-  }, [detectProvider, handleAccounts, handleChain]);
+          const client = detectProvider();
+          if (!client) return;
+          
+          // Try to reconnect BrowserConnectClient
+          try {
+            await client.connect();
+          } catch (e) {
+            // If connect fails, user might need to reconnect manually
+            console.warn("Could not auto-reconnect BrowserConnectClient:", e);
+          }
+          
+          // Verify the account is still available from window.ethereum
+          if (typeof window !== "undefined" && window.ethereum) {
+            try {
+              const accounts = await window.ethereum.request({ method: "eth_accounts" });
+              if (accounts && accounts.length > 0 && accounts[0].toLowerCase() === storedAccount.toLowerCase()) {
+                // Account matches, restore state
+                setAccount(storedAccount);
+                setProvider(client);
+                
+                // Try to get chainId
+                try {
+                  const id = await window.ethereum.request({ method: "eth_chainId" });
+                  setChainId(id);
+                } catch (e) {
+                  // ignore chainId error
+                }
+              } else {
+                // Account changed or not available, clear storage
+                clearStoredWallet();
+                setAccount(null);
+              }
+            } catch (e) {
+              console.warn("Could not verify stored account:", e);
+              // Clear storage if verification fails
+              clearStoredWallet();
+              setAccount(null);
+            }
+          } else {
+            // MetaMask not available, but keep stored account for display
+            setAccount(storedAccount);
+            setProvider(client);
+          }
+        } catch (e) {
+          console.warn("Failed to restore wallet connection:", e);
+          clearStoredWallet();
+          setAccount(null);
+        }
+      })();
+    }
+  }, [isHydrated, detectProvider]);
 
   const value = {
     account,
@@ -132,6 +278,11 @@ export function WalletProvider({ children }) {
     provider,
     connect,
   };
+
+  // Only render children after hydration to avoid hydration mismatch
+  if (!isHydrated) {
+    return null;
+  }
 
   return <WalletContext.Provider value={value}>{children}</WalletContext.Provider>;
 }

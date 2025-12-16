@@ -1,7 +1,7 @@
 import { authAPI } from "./authAPI";
 
-export async function loginWithWallet(provider, account) {
-  if (!provider) throw new Error("No Gala wallet provider available");
+export async function loginWithWallet(client, account, ethereumProvider = null) {
+  if (!client) throw new Error("No BrowserConnectClient available");
   if (!account) throw new Error("No account provided");
 
   const signRes = await authAPI.getSignMessage(account);
@@ -11,7 +11,12 @@ export async function loginWithWallet(provider, account) {
 
   let signature;
   try {
-    signature = await provider.request({ method: "personal_sign", params: [message, account] });
+    if (client.signMessage) {
+      signature = await client.signMessage(message);
+      console.log("----------------cli-signature", signature);
+    } else {
+      throw new Error("No signing method available. Please ensure MetaMask is installed.");
+    }
   } catch (err) {
     if (err && (err.code === 4001 || /user rejected/i.test(err.message || ""))) {
       const e = new Error("User rejected the request");
