@@ -1,27 +1,24 @@
-// src/pages/Shop.jsx
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import MintModal from "../components/MintModal";
 import { useGame } from "../context/GameContext";
-
-/**
- * Arcano Shop
- * FINAL FIXED VERSION
- * - Restored layout exactly (no stretching)
- * - Centered grid with max-width
- * - Egg cards same width as before
- * - Auto-send to incubator logic preserved
- * - addEgg() integrated
- * - updateCurrencies() ready (commented)
- */
+import { useWallet } from "../context/WalletContext";
 
 export default function Shop() {
   const { addEgg, updateCurrencies, moveEggToIncubator, state } = useGame();
+  const { client, account } = useWallet();
 
   const [activeTab, setActiveTab] = useState("Eggs");
   const [isMintOpen, setIsMintOpen] = useState(false);
   const [lastMintResult, setLastMintResult] = useState(null);
   const [mintHistory, setMintHistory] = useState([]);
   const [autoSendToIncubator, setAutoSendToIncubator] = useState(false);
+  const [selectedFaction, setSelectedFaction] = useState(null);
+  const [isMinting, setIsMinting] = useState(false);
+
+  // Debug: Log wallet connection status
+  useEffect(() => {
+    console.log("Shop - Wallet Status:", { client: !!client, account, isMinting });
+  }, [client, account, isMinting]);
 
   const TABS = ["Eggs", "Cosmetics", "Boosts"];
   const EGG_CARDS = [
@@ -31,7 +28,6 @@ export default function Shop() {
     { faction: "Storm", img: "https://gateway.pinata.cloud/ipfs/bafybeigcof4zyinovl7jzkudxgrndeztbekyddccvvkxwjqv63f4pzzubu", background: "https://res.cloudinary.com/dtv3mleyc/image/upload/v1764728125/storm_x4a8jm.png" },
   ];
 
-  // rarity generator
   function generateRarityHint() {
     const roll = Math.random();
     if (roll < 0.02) return "legendary";
@@ -82,6 +78,10 @@ export default function Shop() {
     }
   };
 
+  const handleMintEgg = (faction)=>{
+    console.log(faction,account,client);
+    
+  }
   return (
     <div className="p-4 md:p-6 w-full flex justify-center">
       <div className="w-full max-w-5xl">
@@ -152,11 +152,16 @@ export default function Shop() {
                   </h3>
 
                   <button
-                    onClick={() => setIsMintOpen(true)}
+                    onClick={() => {
+                      handleMintEgg(egg.faction);
+                      // setSelectedFaction(egg.faction);
+                      // setIsMintOpen(true);
+                    }}
+                    disabled={isMinting || !client || !account}
                     className="w-full py-2 rounded-xl bg-purple-600 hover:bg-purple-700 
-                              text-sm font-semibold transition"
+                              text-sm font-semibold transition disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    Mint Random Egg
+                    {isMinting ? "Minting..." : !client || !account ? "Connect Wallet" : "Mint Egg"}
                   </button>
                 </div>
               ))}
@@ -164,8 +169,16 @@ export default function Shop() {
 
             <MintModal
               isOpen={isMintOpen}
-              onClose={() => setIsMintOpen(false)}
+              onClose={() => {
+                setIsMintOpen(false);
+                setSelectedFaction(null);
+                setIsMinting(false);
+              }}
               onSuccess={handleMintSuccess}
+              faction={selectedFaction}
+              client={client}
+              account={account}
+              onMintingChange={setIsMinting}
             />
 
             {/* Mint History */}

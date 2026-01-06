@@ -5,7 +5,7 @@ import { useAuth } from "../context/AuthContext.jsx";
 import { loginWithWallet } from "../services/walletAuth";
 
 export default function Login() {
-  const { account, connect, provider } = useWallet();
+  const { account, connect, client } = useWallet();
   const { login } = useAuth();
   const navigate = useNavigate();
   const [busy, setBusy] = useState(false);
@@ -18,15 +18,15 @@ export default function Login() {
     setBusy(true);
     try {
       // Ensure wallet is connected
-      if (!provider || !account) {
+      if (!client || !account) {
         const res = await connect();
         if (res?.error) {
           throw new Error(res.error?.message || "Failed to connect wallet");
         }
       }
 
-      // Now we have provider and account, do the auth flow
-      const loginRes = await loginWithWallet(provider, account);
+      // Now we have client and account, do the auth flow
+      const loginRes = await loginWithWallet(client, account);
       const { token, profile } = loginRes;
       if (!token) throw new Error("No token returned");
 

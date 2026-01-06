@@ -1,22 +1,11 @@
 // src/components/MintModal.jsx
 import { useEffect, useState } from "react";
+import { ethers, verifyMessage, Signature, hashMessage, getAddress ,TypedDataEncoder} from "ethers";
 
-/**
- * MintModal — AAA Gacha Reveal System
- * ------------------------------------------------------
- * - 3-phase animation:
- *   1. Summoning (energy charge)
- *   2. Egg Reveal (glow + faction element)
- *   3. Rarity Reveal (color aura)
- *
- * - Returns:
- *   { eggId, faction, rarityHint, txHash }
- *
- * - UI safe for Shop layout.
- */
 
-export default function MintModal({ isOpen, onClose, onSuccess }) {
-  const [phase, setPhase] = useState("idle"); // idle → charging → reveal → result
+
+export default function MintModal({ isOpen, onClose, onSuccess, faction: selectedFactionProp, client, account, onMintingChange }) {
+  const [phase, setPhase] = useState("idle");
   const [result, setResult] = useState(null);
 
   // Used for visual reveal
@@ -60,18 +49,24 @@ export default function MintModal({ isOpen, onClose, onSuccess }) {
   useEffect(() => {
     if (!isOpen) {
       setPhase("idle");
+      setResult(null);
+      setFaction(null);
+      setRarity("common");
       return;
     }
 
+    // If no client/account, show error
+    if (!client || !account) {
+      setPhase("error");
+      return;
+    }
+
+    // If no faction selected, use random
+    const selectedFaction = selectedFactionProp || factions[Math.floor(Math.random() * factions.length)];
+    setFaction(selectedFaction);
+
     // Start animation after small delay
     setTimeout(() => setPhase("charging"), 100);
-
-    // Generate mint result
-    const selectedFaction = factions[Math.floor(Math.random() * factions.length)];
-    const selectedRarity = rarityRoll();
-
-    setFaction(selectedFaction);
-    setRarity(selectedRarity);
 
     // Glow color per faction (soft)
     const glow = {
@@ -82,30 +77,226 @@ export default function MintModal({ isOpen, onClose, onSuccess }) {
     };
     setGlowColor(glow[selectedFaction]);
 
-    // Move to reveal phase
-    setTimeout(() => {
-      setPhase("reveal");
-    }, 1500);
+    // Call onchain mint function
+    const performMint = async () => {
+      try {
+        if (onMintingChange) onMintingChange(true);
+        
+        // Move to reveal phase while minting
+        setTimeout(() => {
+          setPhase("reveal");
+        }, 1500);
 
-    // Final result phase
-    setTimeout(() => {
-      const mintResult = {
-        eggId: "egg_" + Date.now(),
-        faction: selectedFaction,
-        rarityHint: selectedRarity,
-        txHash: "0x" + Math.floor(Math.random() * 1e16).toString(16),
-      };
 
-      setResult(mintResult);
-      setPhase("result");
-    }, 2600);
-  }, [isOpen]);
+        console.log(faction,account,client);
+        
+
+        // Normalize faction to match contract enum values
+        const normalizeFaction = (faction) => {
+          const normalized = String(faction).trim();
+          const lower = normalized.toLowerCase();
+          const factionMap = {
+            frost: "Frost",
+            inferno: "Inferno",
+            nature: "Nature",
+            storm: "Storm",
+          };
+          if (factionMap[lower]) return factionMap[lower];
+          if (["Frost", "Inferno", "Nature", "Storm"].includes(normalized)) return normalized;
+          throw new Error(`Invalid faction: ${faction}`);
+        };
+
+        // Generate unique key
+        const generateUniqueKey = () => {
+          return `${Date.now()}-${Math.random().toString(36).substring(2, 15)}`;
+        };
+
+        // Format address with eth| prefix
+        const formatAddress = (address) => {
+          if (!address) throw new Error("Address is required");
+          const addr = String(address).trim();
+          if (addr.startsWith("eth|")) return addr;
+          return `eth|${addr}`;
+        };
+
+        // Get ethereum provider for signing
+        const ethereumProvider = typeof window !== "undefined" ? window.ethereum : null;
+        if (!ethereumProvider) {
+          throw new Error("Ethereum provider (window.ethereum) is required for signing");
+        }
+
+        // Get account address (strip eth| prefix if present for signing)
+        const stripPrefix = (addr) => addr?.startsWith("eth|") ? addr.substring(4) : addr;
+        const signerAddress = stripPrefix(account);
+        
+        // Normalize faction
+        const normalizedFaction = normalizeFaction(selectedFaction);
+        
+        // Create message to sign
+        const message = JSON.stringify(dtoPayload);
+        console.log("-------------------message",message);
+        // Sign the message
+        let signature;
+        try {
+          const uniqueKey = `arcano-public-key-${Math.random()}-${Date.now()}`;
+          const typedData = {
+            domain: {
+              name: "GalaChain",
+              version: "1",
+            },
+            primaryType: "Register GalaChain Wallet",
+            types: {
+              "Register GalaChain Wallet": [
+                { name: "UniqueKey", type: "string" },
+              ],
+            },
+            message: {
+              UniqueKey: uniqueKey,
+            },
+          };
+          signature = await ethereumProvider.request({
+            method: "eth_signTypedData_v4",
+            params: [
+              signerAddress.replace("eth|", ""), // MUST be 0x address
+              JSON.stringify({
+                domain: typedData.domain,
+                primaryType: typedData.primaryType,
+                message: typedData.message,
+                types: {
+                  EIP712Domain: [
+                    { name: "name", type: "string" },
+                    { name: "version", type: "string" },
+                  ],
+                  ...typedData.types,
+                },
+              }),
+            ],
+          });
+
+          const digest = TypedDataEncoder.hash(
+            typedData.domain,
+            typedData.types,
+            typedData.message
+          );
+          const publicKey = verifyMessage(digest, signature);
+          console.log("-------------------signature",publicKey,signature);
+          
+        } catch (err) {
+          if (err.code === 4001 || /user rejected/i.test(err.message || "")) {
+            const e = new Error("User rejected the signature request");
+            e.code = "USER_REJECTED";
+            throw e;
+          }
+          throw err;
+        }
+
+        let signerPublicKey = "";
+        try {
+          const msgHash = ethers.hashMessage(message);
+          const publicKey = ethers.SigningKey.recoverPublicKey(
+            msgHash,
+            signature
+          ).replace(/^0x/, "");
+          signerPublicKey=publicKey;
+        } catch (e) {
+          console.error("Failed to recover public key from signature:", e);
+          signerPublicKey = "";
+        }
+        const requestBody = {
+          dtoExpiresAt: dtoPayload.dtoExpiresAt,
+          dtoOperation: dtoPayload.dtoOperation,
+          faction: dtoPayload.faction,
+          galaAmount: dtoPayload.galaAmount,
+          multisig: dtoPayload.multisig,
+          ownerAddress: dtoPayload.ownerAddress,
+          signature: signature,
+          // signerAddress: formatAddress(signerAddress), 
+          // signerPublicKey: signerPublicKey, // Recovered public key or empty string
+          signing: "ETH",
+          uniqueKey: dtoPayload.uniqueKey,
+        };
+        console.log("-------------------requestBody",requestBody);
+
+        // Send request to GalaChain API
+        const response = await fetch('https://gateway-testnet.galachain.com/api/testnet04/gc-6ce56fd3c2df7a3a0f8f1710574c513ef361c5ed-EggContract/MintByUser', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(requestBody),
+        });
+
+        const data = await response.json();
+        console.log("Response data:", data);
+
+        if (!response.ok || data.Status === 0) {
+          throw new Error(data.Message || `HTTP ${response.status}: Failed to mint egg`);
+        }
+
+        const eggNFT = data.Data;
+        
+        // Extract rarity from egg NFT (if available) or generate
+        const selectedRarity = eggNFT?.rarity?.toLowerCase() || rarityRoll();
+        setRarity(selectedRarity);
+
+        // Create mint result from onchain data
+        const mintResult = {
+          eggId: eggNFT.id || eggNFT.tokenInstanceKey || `egg_${Date.now()}`,
+          faction: eggNFT.faction || selectedFaction,
+          rarityHint: selectedRarity,
+          txHash: eggNFT.id || eggNFT.tokenInstanceKey || "0x" + Math.floor(Math.random() * 1e16).toString(16),
+          // Include full NFT data
+          nft: eggNFT,
+        };
+
+        // Final result phase
+        setTimeout(() => {
+          setResult(mintResult);
+          setPhase("result");
+          if (onMintingChange) onMintingChange(false);
+        }, 2600);
+      } catch (error) {
+        console.error("Mint error:", error);
+        setPhase("error");
+        setResult({
+          error: error.message || "Failed to mint egg",
+        });
+        if (onMintingChange) onMintingChange(false);
+      }
+    };
+
+    // performMint();
+  }, [isOpen, selectedFactionProp, client, account, onMintingChange]);
 
   if (!isOpen) return null;
 
   const handleConfirm = () => {
-    if (result) onSuccess(result);
+    if (result && !result.error) {
+      onSuccess(result);
+    } else {
+      onClose();
+    }
   };
+
+  // Error phase
+  const ErrorFX = () => (
+    <div className="flex flex-col items-center">
+      <div className="w-40 h-40 rounded-full bg-red-900/50 border-2 border-red-500 flex items-center justify-center">
+        <span className="text-4xl">⚠</span>
+      </div>
+      <p className="text-red-400 text-lg font-semibold mt-4">Minting Failed</p>
+      <p className="text-gray-400 text-sm text-center mt-2">
+        {result?.error || "Please ensure your wallet is connected and try again."}
+      </p>
+      <button
+        onClick={onClose}
+        className="mt-4 w-full py-3 rounded-xl bg-red-600 hover:bg-red-700
+                  font-semibold text-white transition"
+      >
+        Close
+      </button>
+    </div>
+  );
 
   // PHASE 1 — Charging animation
   const ChargingFX = () => (
@@ -126,7 +317,7 @@ export default function MintModal({ isOpen, onClose, onSuccess }) {
         shadow-lg ${rarityGlow[rarity]} animate-[pulse_0.8s_infinite]`}
       >
         <img
-          src={`/images/eggs/${faction.toLowerCase()}.png`}
+          src={factions_images[faction] || `/images/eggs/${faction?.toLowerCase()}.png`}
           alt=""
           className="w-24 h-24 object-contain animate-[bounce_1.2s_infinite]"
         />
@@ -183,6 +374,7 @@ export default function MintModal({ isOpen, onClose, onSuccess }) {
         {phase === "charging" && <ChargingFX />}
         {phase === "reveal" && <RevealFX />}
         {phase === "result" && <ResultFX />}
+        {phase === "error" && <ErrorFX />}
 
         {phase === "idle" && (
           <p className="text-white text-center">Preparing...</p>
